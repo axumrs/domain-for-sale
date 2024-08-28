@@ -8,6 +8,8 @@ const frm = reactive({ currency: "USDT", name: "", email: "", captcha: "" });
 const expandCurrency = ref(false);
 const msg = ref("");
 const siteKey = import.meta.env.VITE_HCAPTCHA_SITE_KEY;
+const apiUrl = import.meta.env.VITE_API_URL;
+const isLoading = ref(false);
 
 const handleSubmit = async () => {
   const name = frm.name.trim();
@@ -30,6 +32,31 @@ const handleSubmit = async () => {
     msg.value = "请完成人机验证/Please complete Captcha";
     return;
   }
+
+  isLoading.value = true;
+  fetch(`${apiUrl}/api/offer`, {
+    body: JSON.stringify(frm),
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    cache: "no-cache",
+  })
+    .then((r) => r.json())
+    .then((r) => {
+      const resp = r as Resp;
+      console.log(resp);
+    })
+    .catch((e) => {
+      console.log(e);
+    })
+    .finally(() => {
+      isLoading.value = false;
+    });
+};
+
+const handleCaptchaVerify = (t: string) => {
+  frm.captcha = t;
 };
 </script>
 
@@ -158,7 +185,7 @@ const handleSubmit = async () => {
                       expandCurrency = false;
                     }
                   "
-                  :class="{ 'bg-price': frm.currency === 'USDT' }"
+                  :class="{ 'bg-price/50': frm.currency === 'USDT' }"
                 >
                   <div><Icon icon="mingcute:tether-usdt-line" /></div>
                   <div>702 USDT</div>
@@ -171,7 +198,7 @@ const handleSubmit = async () => {
                       expandCurrency = false;
                     }
                   "
-                  :class="{ 'bg-price': frm.currency === 'CNY' }"
+                  :class="{ 'bg-price/50': frm.currency === 'CNY' }"
                 >
                   <div><Icon icon="mingcute:currency-cny-line" /></div>
                   <div>5000 元人民币/CNY</div>
@@ -181,15 +208,19 @@ const handleSubmit = async () => {
           </label>
 
           <div>
-            <vue-hcaptcha :sitekey="siteKey"></vue-hcaptcha>
+            <vue-hcaptcha
+              :sitekey="siteKey"
+              @verify="handleCaptchaVerify"
+            ></vue-hcaptcha>
           </div>
 
           <div>
             <button
               type="submit"
+              :disabled="isLoading"
               class="flex justify-center items-center gap-x-2 px-4 py-3 w-full bg-price text-dark disabled:bg-price/70 disabled:text-gray-600 disabled:cursor-not-allowed"
             >
-              <div>
+              <div v-if="isLoading">
                 <Icon icon="mingcute:loading-line" class="animate-spin" />
               </div>
               <div>提交</div>
