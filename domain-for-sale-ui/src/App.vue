@@ -16,7 +16,7 @@ const handleSubmit = async () => {
   const email = frm.email.trim();
   const captcha = frm.captcha.trim();
 
-  if (!(name.length >= 3 && name.length <= 50)) {
+  if (!(name.length >= 2 && name.length <= 50)) {
     msg.value = "请输入正确的联系人/Please enter your full name";
     return;
   }
@@ -44,11 +44,17 @@ const handleSubmit = async () => {
   })
     .then((r) => r.json())
     .then((r) => {
-      const resp = r as Resp;
-      console.log(resp);
+      const resp = r as Resp<string>;
+      if (resp && resp.code === 0) {
+        msg.value =
+          "你的意向已提交成功，请等待我们和你联系/Your offer has been submitted successfully, please wait for us to contact you";
+      } else {
+        msg.value = resp.msg;
+      }
     })
     .catch((e) => {
       console.log(e);
+      msg.value = "网络错误/Network Error";
     })
     .finally(() => {
       isLoading.value = false;
