@@ -1,3 +1,3 @@
 #[derive(rust_embed::Embed)]
-#[folder = "src/assets"]
+#[folder = "assets"]
 pub struct Assets;

@@ -10,6 +10,7 @@ const msg = ref("");
 const siteKey = import.meta.env.VITE_HCAPTCHA_SITE_KEY;
 const apiUrl = import.meta.env.VITE_API_URL;
 const isLoading = ref(false);
+const submitted = ref(false);
 
 const handleSubmit = async () => {
   const name = frm.name.trim();
@@ -46,8 +47,13 @@ const handleSubmit = async () => {
     .then((r) => {
       const resp = r as Resp<string>;
       if (resp && resp.code === 0) {
-        msg.value =
-          "你的意向已提交成功，请等待我们和你联系/Your offer has been submitted successfully, please wait for us to contact you";
+        submitted.value = true;
+        Object.assign(frm, {
+          currency: "USDT",
+          name: "",
+          email: "",
+          captcha: "",
+        });
       } else {
         msg.value = resp.msg;
       }
@@ -67,7 +73,7 @@ const handleCaptchaVerify = (t: string) => {
 </script>
 
 <template>
-  <section class="grow bg-[url('bg-dot.png')]">
+  <section class="grow bg-[url('/bg-dot.png')]">
     <div class="bg-dark/50 p-3 lg:min-h-full relative">
       <div
         class="lg:absolute lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 flex flex-col lg:flex-row lg:justify-between lg:items-start lg:gap-x-4"
@@ -115,125 +121,147 @@ const handleCaptchaVerify = (t: string) => {
             </div>
           </div>
         </div>
-        <form
-          autocomplete="off"
-          class="bg-dark lg:min-h-full p-6 lg:grow lg:shrink-0 flex flex-col gap-y-3"
-          @submit.prevent="handleSubmit"
-        >
-          <div
-            class="text-xl flex flex-col lg:flex-row lg:justify-start lg:items-center gap-x-1"
+        <section class="bg-dark lg:min-h-full p-6 lg:grow lg:shrink-0 relative">
+          <form
+            autocomplete="off"
+            @submit.prevent="handleSubmit"
+            class="flex flex-col gap-y-3"
           >
-            <div>提交你的意向</div>
-            <div>SUBMIT YOUR OFFER</div>
-          </div>
-          <label class="flex flex-col w-full gap-y-1">
-            <div>联系人 / Full Name</div>
-            <div class="bg-primary px-4 py-2 text-dark">
-              <input
-                type="text"
-                class="w-full bg-transparent outline-none block"
-                placeholder="联系人 / Full Name"
-                v-model="frm.name"
-              />
+            <div
+              class="text-xl flex flex-col lg:flex-row lg:justify-start lg:items-center gap-x-1"
+            >
+              <div>提交你的意向</div>
+              <div>SUBMIT YOUR OFFER</div>
             </div>
-          </label>
-          <label class="flex flex-col w-full gap-y-1">
-            <div>邮箱 / Email</div>
-            <div class="bg-primary px-4 py-2 text-dark">
-              <input
-                type="email"
-                class="w-full bg-transparent outline-none block"
-                placeholder="邮箱 / Email"
-                v-model="frm.email"
-              />
-            </div>
-          </label>
-          <label class="flex flex-col w-full gap-y-1">
-            <div>货币 / Currency</div>
-            <div class="bg-primary px-4 py-2 text-dark relative">
-              <div
-                class="flex justify-between items-center cursor-pointer"
-                @click="expandCurrency = !expandCurrency"
-              >
-                <div>
-                  <div
-                    class="flex justify-start items-center gap-x-1"
-                    v-if="frm.currency === 'USDT'"
+            <label class="flex flex-col w-full gap-y-1">
+              <div>联系人 / Full Name</div>
+              <div class="bg-primary px-4 py-2 text-dark">
+                <input
+                  type="text"
+                  class="w-full bg-transparent outline-none block"
+                  placeholder="联系人 / Full Name"
+                  v-model="frm.name"
+                />
+              </div>
+            </label>
+            <label class="flex flex-col w-full gap-y-1">
+              <div>邮箱 / Email</div>
+              <div class="bg-primary px-4 py-2 text-dark">
+                <input
+                  type="email"
+                  class="w-full bg-transparent outline-none block"
+                  placeholder="邮箱 / Email"
+                  v-model="frm.email"
+                />
+              </div>
+            </label>
+            <label class="flex flex-col w-full gap-y-1">
+              <div>货币 / Currency</div>
+              <div class="bg-primary px-4 py-2 text-dark relative">
+                <div
+                  class="flex justify-between items-center cursor-pointer"
+                  @click="expandCurrency = !expandCurrency"
+                >
+                  <div>
+                    <div
+                      class="flex justify-start items-center gap-x-1"
+                      v-if="frm.currency === 'USDT'"
+                    >
+                      <div><Icon icon="mingcute:tether-usdt-line" /></div>
+                      <div>702 USDT</div>
+                    </div>
+                    <div class="flex justify-start items-center gap-x-1" v-else>
+                      <div><Icon icon="mingcute:currency-cny-line" /></div>
+                      <div>5000 元人民币/CNY</div>
+                    </div>
+                  </div>
+                  <div>
+                    <Icon
+                      icon="gravity-ui:caret-down"
+                      class="transition-all"
+                      :class="{ 'rotate-180': expandCurrency }"
+                    />
+                  </div>
+                </div>
+                <ul
+                  class="absolute bg-primary left-0 w-full top-11 flex flex-col gap-y-2 transition-all"
+                  :class="{
+                    'opacity-100 visible': expandCurrency,
+                    'opacity-0 invisible': !expandCurrency,
+                  }"
+                >
+                  <li
+                    class="flex justify-start items-center gap-x-1 px-4 py-2 cursor-pointer"
+                    @click="
+                      () => {
+                        frm.currency = 'USDT';
+                        expandCurrency = false;
+                      }
+                    "
+                    :class="{ 'bg-price/50': frm.currency === 'USDT' }"
                   >
                     <div><Icon icon="mingcute:tether-usdt-line" /></div>
                     <div>702 USDT</div>
-                  </div>
-                  <div class="flex justify-start items-center gap-x-1" v-else>
+                  </li>
+                  <li
+                    class="flex justify-start items-center gap-x-1 px-4 py-2 cursor-pointer"
+                    @click="
+                      () => {
+                        frm.currency = 'CNY';
+                        expandCurrency = false;
+                      }
+                    "
+                    :class="{ 'bg-price/50': frm.currency === 'CNY' }"
+                  >
                     <div><Icon icon="mingcute:currency-cny-line" /></div>
                     <div>5000 元人民币/CNY</div>
-                  </div>
-                </div>
-                <div>
-                  <Icon
-                    icon="gravity-ui:caret-down"
-                    class="transition-all"
-                    :class="{ 'rotate-180': expandCurrency }"
-                  />
-                </div>
+                  </li>
+                </ul>
               </div>
-              <ul
-                class="absolute bg-primary left-0 w-full top-11 flex flex-col gap-y-2 transition-all"
-                :class="{
-                  'opacity-100 visible': expandCurrency,
-                  'opacity-0 invisible': !expandCurrency,
-                }"
-              >
-                <li
-                  class="flex justify-start items-center gap-x-1 px-4 py-2 cursor-pointer"
-                  @click="
-                    () => {
-                      frm.currency = 'USDT';
-                      expandCurrency = false;
-                    }
-                  "
-                  :class="{ 'bg-price/50': frm.currency === 'USDT' }"
-                >
-                  <div><Icon icon="mingcute:tether-usdt-line" /></div>
-                  <div>702 USDT</div>
-                </li>
-                <li
-                  class="flex justify-start items-center gap-x-1 px-4 py-2 cursor-pointer"
-                  @click="
-                    () => {
-                      frm.currency = 'CNY';
-                      expandCurrency = false;
-                    }
-                  "
-                  :class="{ 'bg-price/50': frm.currency === 'CNY' }"
-                >
-                  <div><Icon icon="mingcute:currency-cny-line" /></div>
-                  <div>5000 元人民币/CNY</div>
-                </li>
-              </ul>
+            </label>
+
+            <div>
+              <vue-hcaptcha
+                :sitekey="siteKey"
+                @verify="handleCaptchaVerify"
+              ></vue-hcaptcha>
             </div>
-          </label>
 
-          <div>
-            <vue-hcaptcha
-              :sitekey="siteKey"
-              @verify="handleCaptchaVerify"
-            ></vue-hcaptcha>
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              :disabled="isLoading"
-              class="flex justify-center items-center gap-x-2 px-4 py-3 w-full bg-price text-dark disabled:bg-price/70 disabled:text-gray-600 disabled:cursor-not-allowed"
+            <div>
+              <button
+                type="submit"
+                :disabled="isLoading"
+                class="flex justify-center items-center gap-x-2 px-4 py-3 w-full bg-price text-dark disabled:bg-price/70 disabled:text-gray-600 disabled:cursor-not-allowed"
+              >
+                <div v-show="isLoading">
+                  <Icon icon="mingcute:loading-line" class="animate-spin" />
+                </div>
+                <div>提交</div>
+                <div>SUBMIT</div>
+              </button>
+            </div>
+          </form>
+          <div
+            class="absolute inset-0 bg-dark z-10 flex flex-col justify-center items-center gap-y-2"
+            v-show="submitted"
+          >
+            <div class="text-[4rem]">
+              <Icon
+                icon="ph:check-light"
+                class="rounded-full p-0.5 border bg-price/70 text-primary"
+              />
+            </div>
+            <div
+              class="text-center flex flex-col justify-center items-center gap-y-2"
             >
-              <div v-if="isLoading">
-                <Icon icon="mingcute:loading-line" class="animate-spin" />
-              </div>
-              <div>提交</div>
-              <div>SUBMIT</div>
-            </button>
+              <p>你的意向已提交成功，请等待我们和你联系</p>
+              <p>
+                Your offer has been submitted successfully, please wait for us
+                to contact you
+              </p>
+            </div>
           </div>
-        </form>
+        </section>
       </div>
     </div>
   </section>
